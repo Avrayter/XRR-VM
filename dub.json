@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"XFE Group"
+	],
+	"copyright": "Copyright © 2026, XFE Group",
+	"description": "VM for custom cpu isa",
+	"license": "MIT",
+	"name": "xfe-risc-vm"
+}

@@ -1,0 +1,143 @@
+These are the rules of the cpu isa known as Xrrl Resilliant Risc Layout (XRRL).
+it is pure risc. Every instruction is either 32 bit or shorthand for a 32 bit instruction.
+
+this is for the 64 bit version, there may be a 32 bit version or maybe not.
+there are 31 general purpose 64 bit registers, instructions assume 32 because register 0 is always 0 and writing to it is ignored, and 00000 as a register indexed will be called register 0 in this document
+
+XRRL is little endian.
+
+the opcode is always 8 bits, as in:
+=================================================================
+|o|o|o|o|o|o|o|o| | | | | | | | | | | | | | | | | | | | | | | | |
+=================================================================
+where o's are the bits of the opcodes
+the following 24 bits have these formats:
+Format J:
+=================================================================
+|o|o|o|o|o|o|o|o|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|
+=================================================================
+where X is a 24 bit adress for forced relative jumps of the program counter, but 2 aligned because that's what instructions are and pcq it allows more range
+Format W:
+=================================================================
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|X|Z|Z|Z|
+=================================================================
+Where Y's hold the index of the register to be accessed, and X's hold a 16 bit number which is either the amount to jump (relatively) if register is zero or a 16 bit number to write with the 3 z bits to have the first two be the position in the register (out of 4) and the extra bit being for whether or not the rest of the register is cleared.
+Format O:
+=================================================================
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|X|X|X|X|X|V|V|V|V|V|W|W|W|W|
+=================================================================
+X, Y, and Z are three registers,
+Y is the destination registers, whenever operations are mentioned it is implied %Z is before %X
+V and W are specifiers and can be used for giant extensions or multiple, so with just one opcode you can specify up to 512 instructions so you can have a bunch of operations
+Format P:
+=================================================================
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|X|X|X|X|X|V|V|V|I|I|I|I|I|I|
+=================================================================
+X, Y, and Z are three registers,
+Y is the destination registers, whenever operations are mentioned it is implied %Z is before %X
+V is another specifier and can be used for extensions or specification, with just opcode you can specify up to 8 instructions
+I is an immediate value
+
+Format S:
+=================================================================
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|V|V|V|V|V|V|V|V|V|V|W|W|W|W|
+=================================================================
+Y is destination register, Z is read from, V is a value and W is a further specifier
+Format T:
+=================================================================
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|V|V|V|V|V|V|W|W|W|W|W|W|W|W|
+=================================================================
+Y is destination register, Z is register read from, V is a value and W is a further specifier
+
+faulty means throwing a cpu exception.
+
+that should all be enough for formats.
+These are the opcodes of the base isa:
+0x00 - faulty
+0x01 - faulty
+0xF8 - 0xFF - used for 16 bit shorthands for instructions
+0xF0 - 0xF7 - reserved for boot instructions and all or whatever, unspecified
+0x02 - format J, for invoulantary relative jumps where X is a signed integer and 2*X bytes are jumped.
+Aseembly is jmp [bytes to jump in hex, or label], eg. jmp 0x0FC71A.
+0x03 - format W, for voulantary relative jumps where X is a signed integer and 2*X bytes are jumped, if the %Y is not zero.
+Assembly is jrnz, (jump [if] register [is] not 0), eg. "jrnz %5, 0x053A", or "jrnz %5, func2", where func2 is a label close enough
+0x04 - format W, has these rules, write X as 2 bytes the the register indexed by Y at one out of four positions where 2 out of 8 bytes can fit, by the first 2 bits of Z, and clear the register of '1's sans the specified parts if the third bit of Z is 0
+
+assembly:
+[write two bytes]
+wtb %Y, [bytes of X], [0 to 3 for position]
+or 
+[write two bytes and clear]
+wtbc %Y, [bytes of X], [0 to 3 for position]
+
+0x05 - format W, write the lower (earlier, remember, little endian) 8 bits of X, at one out of the 8 positions in the register that Z specifies, and clear the rest of the register to 0 if the top (latest) bit of X is 0.
+
+assembly:
+[write byte]
+wb %Y, [bottom half of x], [3 bit # for position]
+[write byte and clear]
+wbc %Y, [bottom half of x], [3 bit # for position]
+
+0x06 - format W, do an operation X as an 16 bit interger (signed or not) to the register indexed in Y, using these values of Z:
+     0 - add (unsigned), asm is "addi, %Y, X" 
+     1 - subtract (unsigned), asm is "subi, %Y, X"
+     2 - shift (Z is signed), asm is "sfli, %Y, X" 
+     3 - shift arithmetic, (if right fill vacated bits with sign bits). (Z is signed), asm is "sfai, %Y, X"
+     (the bitwise things only apply to the bottom 16 bits)
+     4 - bitwise and, asm is "beti, %Y, X".
+     5 - bitwise or, "bori, %Y, X"
+     6 - bitwise xor, "bxoi, %Y, X"
+     7 - multiply (signed) (bottom 64 bits of result), asm is "muli, %Y, X"
+
+0x07 - format S, by W:
+    0- 8 bytes from the memory address that register Z refers to,  get written to register Y. (bottom   q means earlier part), asm is "retr, %"
+    1 - 
+
+0x08 - by values of W:
+    0 - set the pc to the adress of the regster indexed by Y if Z is not zero.
+    1 - swap registers Y and Z, as in swap their content
+0x09 - format O, %Z [some operation] %X goes to %Y, the operations are based on W having these values, with V being 0:
+    0 - add, asm is "add %Y, %Z, %X", pseudo instruction "mov %Z, %Y" is just "add %Y, %Z, %0" 
+    1 - subtract, asm is "sub %Y, %Z, %X". pseudo instruction "twc %Y, %X" (two's compliment) is just sub %Y, %0, %X.
+    2 - bitwise shift of %X by %Z (%Z interpreted as signed integer), shifts the register by bits literally, asm is "sfl %Y, %X, %Z".
+    3 - bitwise shift arithmatic, perserves sign, as in, replicates sign- bit in vacant positions if shifting right
+    4 - bitwise and, asm is "bwet, %Y, %Z, %X"
+    5 - bitwise or, asm is "bwor, %Y, %Z, %X"
+    6 - bitwise xor, asm is "bwxo, %Y, %Z, %X"
+    7 - multiply (both signed) (bottom 64 bits of result but sign bit is kept), asm is "mlbs, %Y, %Z, %X",
+    8 - multiply (overflow), asm is "mul, %Y, %Z, %X".
+    9 - multiply (both signed), top 64 bits of result, asm is "mlhs, %Y, %Z, %X".
+    10 - multiply (both unsigned), top 64 bits of result, assembly is "mlh %Y, %Z, %X"
+    11 - sets register Y to 1 if %Z is the same as %X, else sets to 0, asm is "eqb %Y, %Z, %X".
+    12 - sets %Y to 1 if %Z > %X (unsigned), else set to 0.
+    13 - sets %Y to 1 if %Z > %X (signed), else set to 0.
+    14 - sets %Y to 1 if %Z <= %X (unsigned), else set to 0.
+    15 - sets %Y to 1 if %Z <= %X (signed), else set to 0.
+    with V being 1, by values of W:
+    0 - go to the adress in Y  
+0x0b - format W,set Y to the current program counter.
+0x0c - format W, if Z is zero, halts untill interrupted if %X is not zero, else, turn off computer.
+ if Z is not zero, then if Z is odd it waits until interupted and if even turns off computer.
+0x0d - 
+0x0e - system call, format W, %Y is a register passed and X is 2 bytes, as in, 16,000 opcodes for the OS, further implementation is left to OS implementers, if no OS is present it's faulty, however [insert way to alter system call instructions if privliged]
+
+that is the xrrl base isa.
+There is also:
+XRRL division extension:
+0x09, format O, by values of W, this is for V = 2:
+    0: unsigned / unsigned to unsigned, integer floor division
+    1: signed / signed to signed integer floor division
+    2: unsigned / signed to signed integer floor division
+    3: modulo (unsigned)
+    4: modulo (signed, like in C)
+    5: modulo (signed, like in python)
+0x14, format W, do operation of %Y by X as so, why calues of Z:
+    0: unsigned / unsigned to unsigned, integer floor division
+    1: signed / signed to signed integer floor division
+    2: unsigned / signed to signed integer floor division
+    3: modulo (unsigned)
+    4: modulo (signed, like in C)
+    5: modulo (signed, like in python)
+note: division will throw exception if denominator is 0, but modulo will return 0 if 0.
+
+that is all the division extension.

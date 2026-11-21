@@ -1,0 +1,16 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/xfe-risc-vm
+xfe-risc-vm.so
+xfe-risc-vm.dylib
+xfe-risc-vm.dll
+xfe-risc-vm.a
+xfe-risc-vm.lib
+xfe-risc-vm-test-*
+*.exe
+*.pdb
+*.o
+*.obj
+*.lst
