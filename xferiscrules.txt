@@ -45,7 +45,7 @@ Format S:
 Y is destination register, Z is read from, V is a value and W is a further specifier
 Format T:
 =================================================================
-|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|V|V|V|V|V|V|W|W|W|W|W|W|W|W|
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|V|V|V|V|V|V|W|W|W|W|U|U|U|U|
 =================================================================
 Y is destination register, Z is register read from, V is a value and W is a further specifier
 
@@ -90,13 +90,11 @@ wbc %Y, [bottom half of x], [3 bit # for position]
      7 - multiply (signed) (bottom 64 bits of result), asm is "muli, %Y, X"
 
 0x07 - format S, by W:
-    0- 8 bytes from the memory address that register Z refers to,  get written to register Y. (bottom   q means earlier part), asm is "retr, %"
-    1 - 
+    0- 8 bytes from the memory address that register Z refers to, get written to register Y. Asm is "retr, %Y, %Z"
+    1 - swap registers %Y and %Z
 
-0x08 - by values of W:
-    0 - set the pc to the adress of the regster indexed by Y if Z is not zero.
-    1 - swap registers Y and Z, as in swap their content
-0x09 - format O, %Z [some operation] %X goes to %Y, the operations are based on W having these values, with V being 0:
+
+0x08 - format O, %Z [some operation] %X goes to %Y, the operations are based on W having these values, with V being 0:
     0 - add, asm is "add %Y, %Z, %X", pseudo instruction "mov %Z, %Y" is just "add %Y, %Z, %0" 
     1 - subtract, asm is "sub %Y, %Z, %X". pseudo instruction "twc %Y, %X" (two's compliment) is just sub %Y, %0, %X.
     2 - bitwise shift of %X by %Z (%Z interpreted as signed integer), shifts the register by bits literally, asm is "sfl %Y, %X, %Z".
@@ -114,24 +112,29 @@ wbc %Y, [bottom half of x], [3 bit # for position]
     14 - sets %Y to 1 if %Z <= %X (unsigned), else set to 0.
     15 - sets %Y to 1 if %Z <= %X (signed), else set to 0.
     with V being 1, by values of W:
-    0 - go to the adress in Y  
-0x0b - format W,set Y to the current program counter.
-0x0c - format W, if Z is zero, halts untill interrupted if %X is not zero, else, turn off computer.
+    0 - pc to the adress in %Y if %X == %Z, asm is "beq %Y, %Z, %X"
+    1 - pc to the adress in %Y if %X != %Z, asm is "bneq %Y, %Z, %X"
+    2 - pc to the adress in %Y if %Z > %X (unsigned) asm is "bgtu, %Y, %Z, %X"
+    3 - pc to the adress in %Y if %Z <= %X (unsigned) asm is "bleu, %Y, %Z, %X"
+    4 - pc to the adress in %Y if %Z > %X (signed) asm is "bgt, %Y, %Z, %X"
+    5 - pc to the adress in %Y if %Z <= %X (signed) asm is "ble, %Y, %Z, %X"
+0x09 - format W,set Y to the current program counter.
+0x0a - format W, if Z is zero, halts untill interrupted if %X is not zero, else, turn off computer.
  if Z is not zero, then if Z is odd it waits until interupted and if even turns off computer.
-0x0d - 
-0x0e - system call, format W, %Y is a register passed and X is 2 bytes, as in, 16,000 opcodes for the OS, further implementation is left to OS implementers, if no OS is present it's faulty, however [insert way to alter system call instructions if privliged]
+0x0b - format W, jump by the value of X if z is 0, or go to %Y + Z*2 if Z is not zero, as a signed integer, and not by bytes, by even bytes, since that's how instructions are aligned, and put the current program counter + 4 into register Y. Aseembly is "jal, %Y, X" if z is 0, and "jalr, %Y, X" if z is not zero
+0x0c - system call, format W, %Y is a register passed and X is 2 bytes, as in, 65,000 opcodes for the OS, further implementation is left to OS implementers, if no OS is present it's faulty, however [insert way to alter system call instructions if privliged]
 
 that is the xrrl base isa.
 There is also:
 XRRL division extension:
-0x09, format O, by values of W, this is for V = 2:
+0x08, format O, by values of W, this is for V = 2:
     0: unsigned / unsigned to unsigned, integer floor division
     1: signed / signed to signed integer floor division
     2: unsigned / signed to signed integer floor division
     3: modulo (unsigned)
     4: modulo (signed, like in C)
     5: modulo (signed, like in python)
-0x14, format W, do operation of %Y by X as so, why calues of Z:
+0x0d, format W, do operation of %Y by X as so, by calues of Z:
     0: unsigned / unsigned to unsigned, integer floor division
     1: signed / signed to signed integer floor division
     2: unsigned / signed to signed integer floor division

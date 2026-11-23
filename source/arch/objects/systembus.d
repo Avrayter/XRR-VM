@@ -46,7 +46,6 @@ struct MmioController
 
 /+basic example with only memory and no mmu, vga buffer, etc.+/
 
-//SystemBus lazyBus = SystemBus(&lazyRead, &lazyWrite, 500_000);
 
 unittest
 {
