@@ -112,3 +112,12 @@ DecodedFormatT decodeT(uint ins){
     return dt;
 }
 
+enum Format
+{
+    FMT_J,
+    FMT_W,
+    FMT_O,
+    FMT_P,
+    FMT_S,
+    FMT_T,
+}
