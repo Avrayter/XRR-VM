@@ -82,4 +82,26 @@ InstructionOutcome i0x06(ref Cpu cpu, ushort cpuCoreID, DecodedFormatW dw){
             assert(0);
     }
     return ryVal;
+
+}
+
+InstructionOutcome i0x08(Cpu cpu, ushort cpuCoreID, DecodedFormatO decO){
+    if(cpuCoreId >= cpu.core.length) return InstructionOutcome(3);
+    size_t ryVal = cpu[cpuCoreID].getregval(dw.regY);
+    size_t rxVal = cpu[cpuCoreID].getregval(dw.regX);
+    size_t rzVal = cpu[cpuCoreID].getregval(dw.regZ);
+    switch (decO.specV){
+        switch(decO.specW){
+        case 0:
+            ryVal = rxVal + rzVal;
+            break;
+        case 1:
+            ryVal = rzVal - rxVal;
+            break;
+        case 2:
+            ryVal = rzVal >> cast(ptrdiff_t) rxVal;
+        case 3:
+            ryVal = rzVal >>> cast(ptrdiff_t) rxVal;
+        }
+    }
 }
