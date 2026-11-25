@@ -59,8 +59,9 @@ These are the opcodes of the base isa:
 0xF0 - 0xF7 - reserved for boot instructions and all or whatever, unspecified
 0x02 - format J, for invoulantary relative jumps where X is a signed integer and 2*X bytes are jumped.
 Aseembly is jmp [bytes to jump in hex, or label], eg. jmp 0x0FC71A.
-0x03 - format W, for voulantary relative jumps where X is a signed integer and 2*X bytes are jumped, if the %Y is not zero.
+0x03 - format W, for Z != 0, for voulantary relative jumps where X is a signed integer and 2*X bytes are jumped, if the %Y is not zero.
 Assembly is jrnz, (jump [if] register [is] not 0), eg. "jrnz %5, 0x053A", or "jrnz %5, func2", where func2 is a label close enough
+for z == 0, it's the same but it jumps if the register's 0.
 0x04 - format W, has these rules, write X as 2 bytes the the register indexed by Y at one out of four positions where 2 out of 8 bytes can fit, by the first 2 bits of Z, and clear the register of '1's sans the specified parts if the third bit of Z is 0
 
 assembly:
@@ -81,8 +82,8 @@ wbc %Y, [bottom half of x], [3 bit # for position]
 0x06 - format W, do an operation X as an 16 bit interger (signed or not) to the register indexed in Y, using these values of Z:
      0 - add (unsigned), asm is "addi, %Y, X" 
      1 - subtract (unsigned), asm is "subi, %Y, X"
-     2 - shift (Z is signed), asm is "sfli, %Y, X" 
-     3 - shift arithmetic, (if right fill vacated bits with sign bits). (Z is signed), asm is "sfai, %Y, X"
+     2 - shift right (Z is signed), asm is "sfli, %Y, X" 
+     3 - shift right  arithmetic, (if right fill vacated bits with sign bits). (Z is signed), asm is "sfai, %Y, X"
      (the bitwise things only apply to the bottom 16 bits)
      4 - bitwise and, asm is "beti, %Y, X".
      5 - bitwise or, "bori, %Y, X"
