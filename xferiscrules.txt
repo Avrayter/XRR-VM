@@ -94,7 +94,7 @@ wbc %Y, [bottom half of x], [3 bit # for position]
     0, by U:
     0- 8 bytes from the memory address that register Z refers to, get written to register Y. Asm is "retr, %Y, %Z"
     1 - swap registers %Y and %Z
-    2 - 
+    2 - write to the adress in %Y, an amount of bytes from %Z counting from the bottom, with the about specified by the value of V, if V is greater than 8 the instruction is faulty.
 
 
 0x08 - format O, %Z [some operation] %X goes to %Y, the operations are based on W having these values, with V being 0:
