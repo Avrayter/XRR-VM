@@ -31,7 +31,7 @@ Y is the destination registers, whenever operations are mentioned it is implied 
 V and W are specifiers and can be used for giant extensions or multiple, so with just one opcode you can specify up to 512 instructions so you can have a bunch of operations
 Format P:
 =================================================================
-|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|X|X|X|X|X|V|V|V|I|I|I|I|I|I|
+|o|o|o|o|o|o|o|o|Y|Y|Y|Y|Y|Z|Z|Z|Z|Z|X|X|X|X|X|I|I|I|I|I|I|V|V|V|
 =================================================================
 X, Y, and Z are three registers,
 Y is the destination registers, whenever operations are mentioned it is implied %Z is before %X
@@ -90,9 +90,11 @@ wbc %Y, [bottom half of x], [3 bit # for position]
      6 - bitwise xor, "bxoi, %Y, X"
      7 - multiply (signed) (bottom 64 bits of result), asm is "muli, %Y, X"
 
-0x07 - format S, by W:
+0x07 - format T, by W:
+    0, by U:
     0- 8 bytes from the memory address that register Z refers to, get written to register Y. Asm is "retr, %Y, %Z"
     1 - swap registers %Y and %Z
+    2 - 
 
 
 0x08 - format O, %Z [some operation] %X goes to %Y, the operations are based on W having these values, with V being 0:
@@ -124,7 +126,6 @@ wbc %Y, [bottom half of x], [3 bit # for position]
  if Z is not zero, then if Z is odd it waits until interupted and if even turns off computer.
 0x0b - format W, jump by the value of X if z is 0, or go to %Y + Z*2 if Z is not zero, as a signed integer, and not by bytes, by even bytes, since that's how instructions are aligned, and put the current program counter + 4 into register Y. Aseembly is "jal, %Y, X" if z is 0, and "jalr, %Y, X" if z is not zero
 0x0c - system call, format W, %Y is a register passed and X is 2 bytes, as in, 65,000 opcodes for the OS, further implementation is left to OS implementers, if no OS is present it's faulty, however [insert way to alter system call instructions if privliged]
-
 that is the xrrl base isa.
 There is also:
 XRRL division extension:

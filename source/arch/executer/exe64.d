@@ -102,6 +102,14 @@ InstructionOutcome i0x08(Cpu cpu, ushort cpuCoreID, DecodedFormatO decO){
             ryVal = rzVal >> cast(ptrdiff_t) rxVal;
         case 3:
             ryVal = rzVal >>> cast(ptrdiff_t) rxVal;
+        case 4:
+            ryVal = rzVal & rxVal;
+        case 5:
+            ryVal = rzVal | rxVal;
+        case 6:
+            ryVal = rzVal ^ rxVal;
+        case 7:
+            //TODO: finish
         }
     }
 }
